@@ -6,6 +6,7 @@ fetching prayer times, and finding mosques in the neighborhood.
 
 import logging
 
+from aiohttp import ClientSession
 from mawaqit import AsyncMawaqitClient
 from mawaqit.exceptions import BadCredentialsException, MawaqitException
 
@@ -17,13 +18,16 @@ _LOGGER = logging.getLogger(__name__)
 async def validate_credentials(
     username: str | None = None,
     password: str | None = None,
+    session: ClientSession | None = None,
     client_instance: AsyncMawaqitClient | None = None,
 ) -> bool:
     """Return True if the MAWAQIT credentials is valid."""
     try:
         client = client_instance
         if client is None:
-            client = AsyncMawaqitClient(username=username, password=password)
+            client = AsyncMawaqitClient(
+                username=username, password=password, session=session
+            )
         await client.login()
     except BadCredentialsException:
         return False
@@ -40,6 +44,7 @@ async def validate_credentials(
 async def get_mawaqit_api_token(
     username: str | None = None,
     password: str | None = None,
+    session: ClientSession | None = None,
     client_instance: AsyncMawaqitClient | None = None,
 ) -> str | None:
     """Return the MAWAQIT API token."""
@@ -47,7 +52,9 @@ async def get_mawaqit_api_token(
     try:
         client = client_instance
         if client is None:
-            client = AsyncMawaqitClient(username=username, password=password)
+            client = AsyncMawaqitClient(
+                username=username, password=password, session=session
+            )
         token = await client.get_api_token()
     except BadCredentialsException as e:
         _LOGGER.debug("Error on retrieving API Token: %s", e)
@@ -68,6 +75,7 @@ async def all_mosques_neighborhood(
     username: str | None = None,
     password: str | None = None,
     token: str | None = None,
+    session: ClientSession | None = None,
     client_instance: AsyncMawaqitClient | None = None,
 ) -> list[MawaqitMosqueData] | None:
     """Return mosques in the neighborhood if any. Returns a list of dicts."""
@@ -75,7 +83,7 @@ async def all_mosques_neighborhood(
     try:
         if client is None:
             client = AsyncMawaqitClient(
-                latitude, longitude, mosque, username, password, token, session=None
+                latitude, longitude, mosque, username, password, token, session=session
             )
         await client.get_api_token()
 
@@ -92,6 +100,7 @@ async def all_mosques_by_keyword(
     username: str | None = None,
     password: str | None = None,
     token: str | None = None,
+    session: ClientSession | None = None,
     client_instance: AsyncMawaqitClient | None = None,
 ) -> list[MawaqitMosqueData]:
     """Return mosques matching the keyword. Returns a list of dicts."""
@@ -99,7 +108,7 @@ async def all_mosques_by_keyword(
     try:
         if client is None:
             client = AsyncMawaqitClient(
-                username=username, password=password, token=token, session=None
+                username=username, password=password, token=token, session=session
             )
         await client.get_api_token()
 
@@ -119,6 +128,7 @@ async def fetch_prayer_times(
     username: str | None = None,
     password: str | None = None,
     token: str | None = None,
+    session: ClientSession | None = None,
     client_instance: AsyncMawaqitClient | None = None,
 ) -> dict | None:
     """Get prayer times from the MAWAQIT API. Returns a dict."""
@@ -126,7 +136,7 @@ async def fetch_prayer_times(
     try:
         if client is None:
             client = AsyncMawaqitClient(
-                latitude, longitude, mosque, username, password, token, session=None
+                latitude, longitude, mosque, username, password, token, session=session
             )
         await client.get_api_token()
         return await client.fetch_prayer_times()
@@ -138,13 +148,14 @@ async def fetch_prayer_times(
 async def fetch_mosque_by_id(
     mosque: str,
     token: str | None = None,
+    session: ClientSession | None = None,
     client_instance: AsyncMawaqitClient | None = None,
 ) -> dict | None:
     """Get Mosque data by ID from the MAWAQIT API. Returns a dict."""
     client = client_instance
     try:
         if client is None:
-            client = AsyncMawaqitClient(token=token)
+            client = AsyncMawaqitClient(token=token, session=session)
         await client.get_api_token()
         return await client.fetch_mosque_by_id(mosque)
     finally:
