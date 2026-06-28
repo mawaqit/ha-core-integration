@@ -7,6 +7,6 @@
   "integration_type": "hub",
   "iot_class": "cloud_polling",
   "quality_scale": "gold",
-  "requirements": ["mawaqit==1.0.12"],
+  "requirements": ["mawaqit==1.0.13"],
   "single_config_entry": true
 }
