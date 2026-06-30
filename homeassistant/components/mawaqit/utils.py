@@ -126,12 +126,14 @@ def extract_time_from_calendar(
         return None
 
 
-def time_with_timezone(timezone: str, date: date, time: str) -> datetime | None:
+def time_with_timezone(
+    timezone: str, target_date: str | date, time: str
+) -> datetime | None:
     """Convert a naive datetime to a timezone-aware datetime.
 
     Args:
         timezone (str): The timezone string (e.g., "Europe/Paris").
-        date (str): The date string in "YYYY-MM-DD" format.
+        target_date (str | date): The date in "YYYY-MM-DD" format.
         time (str): The time string in "HH:MM" format.
 
     Returns:
@@ -142,7 +144,7 @@ def time_with_timezone(timezone: str, date: date, time: str) -> datetime | None:
     if not tz:
         _LOGGER.error("Invalid timezone: %s", timezone)
         return None
-    naive_time = datetime.strptime(f"{date} {time}", "%Y-%m-%d %H:%M")
+    naive_time = datetime.strptime(f"{target_date} {time}", "%Y-%m-%d %H:%M")
     return dt_util.as_local(naive_time.replace(tzinfo=tz))
 
 
@@ -208,17 +210,17 @@ def parse_iqama_time(prayer_time: str, iqama_value: str) -> str | None:
 
 
 def compute_islamic_midnight(
-    prayer_data: dict, date: date, timezone: str
+    prayer_data: dict, target_date: date, timezone: str
 ) -> datetime | None:
     """Return the Islamic midnight for a given date.
 
-    Islamic midnight is the midpoint between Isha of `date` and Fajr of the
-    following day.  It is always timezone-aware and expressed in the mosque's
-    local timezone.
+    Islamic midnight is the midpoint between Isha of `target_date` and Fajr of
+    the following day.  It is always timezone-aware and expressed in the
+    mosque's local timezone.
 
     Args:
         prayer_data: Full prayer data dict (must contain a ``calendar`` key).
-        date:        Civil date (datetime.date) whose Isha starts the interval.
+        target_date: Civil date (datetime.date) whose Isha starts the interval.
         timezone:    IANA timezone string (e.g. ``"Africa/Casablanca"``).
 
     Returns:
@@ -228,18 +230,19 @@ def compute_islamic_midnight(
     if not calendar:
         return None
 
-    next_day = date + timedelta(days=1)
+    next_day = target_date + timedelta(days=1)
 
-    isha_str = extract_time_from_calendar(calendar, "isha", date)
+    isha_str = extract_time_from_calendar(calendar, "isha", target_date)
     fajr_str = extract_time_from_calendar(calendar, "fajr", next_day)
 
     if not isha_str or not fajr_str:
         _LOGGER.warning(
-            "Cannot compute Islamic midnight for %s: missing Isha or Fajr time", date
+            "Cannot compute Islamic midnight for %s: missing Isha or Fajr time",
+            target_date,
         )
         return None
 
-    isha_dt = time_with_timezone(timezone, date, isha_str)
+    isha_dt = time_with_timezone(timezone, target_date, isha_str)
     fajr_dt = time_with_timezone(timezone, next_day, fajr_str)
 
     if not isha_dt or not fajr_dt:
