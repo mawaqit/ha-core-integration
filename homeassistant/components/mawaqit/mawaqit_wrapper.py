@@ -69,8 +69,8 @@ async def get_mawaqit_api_token(
 
 
 async def all_mosques_neighborhood(
-    latitude,
-    longitude,
+    latitude: float,
+    longitude: float,
     mosque: str | None = None,
     username: str | None = None,
     password: str | None = None,
@@ -122,8 +122,8 @@ async def all_mosques_by_keyword(
 
 
 async def fetch_prayer_times(
-    latitude: str | None = None,
-    longitude: str | None = None,
+    latitude: float | None = None,
+    longitude: float | None = None,
     mosque: str | None = None,
     username: str | None = None,
     password: str | None = None,
