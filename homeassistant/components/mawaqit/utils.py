@@ -1,6 +1,6 @@
 """Utility functions for the Mawaqit integration."""
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 import logging
 import re
 
@@ -17,9 +17,9 @@ _TIME_ABSOLUTE_RE = re.compile(r"^\d{2}:\d{2}$")  # Matches HH:MM format
 def save_mosque(
     mosque_display_name: str,
     mosque_id: str,
-    mawaqit_token=None,
-    lat=None,
-    longi=None,
+    mawaqit_token: str | None = None,
+    lat: float | None = None,
+    longi: float | None = None,
 ) -> tuple[str, dict]:
     """Create a data entry to simplify the process of saving mosque data.
 
@@ -40,7 +40,7 @@ def save_mosque(
         raise ValueError("Token should not be None !")
 
     title = "MAWAQIT" + " - " + mosque_display_name
-    data_entry = {
+    data_entry: dict[str, str | float] = {
         CONF_API_KEY: mawaqit_token,
         CONF_UUID: mosque_id,
     }
@@ -52,7 +52,10 @@ def save_mosque(
 
 
 def extract_time_from_calendar(
-    calendar, prayer_name, target_date, mode_iqama=False
+    calendar: list[dict[str, list[str]]],
+    prayer_name: str,
+    target_date: date,
+    mode_iqama: bool = False,
 ) -> str | None:
     """Extract the time of a specific prayer for a given date.
 
@@ -123,7 +126,7 @@ def extract_time_from_calendar(
         return None
 
 
-def time_with_timezone(timezone, date, time) -> datetime | None:
+def time_with_timezone(timezone: str, date: date, time: str) -> datetime | None:
     """Convert a naive datetime to a timezone-aware datetime.
 
     Args:
@@ -143,7 +146,7 @@ def time_with_timezone(timezone, date, time) -> datetime | None:
     return dt_util.as_local(naive_time.replace(tzinfo=tz))
 
 
-def _to_utc(timezone: str, day, time_str: str) -> datetime | None:
+def _to_utc(timezone: str, day: date, time_str: str) -> datetime | None:
     """Localize a HH:MM time string on a given date and return it in UTC."""
     if not time_str:
         return None
@@ -153,7 +156,7 @@ def _to_utc(timezone: str, day, time_str: str) -> datetime | None:
     return None
 
 
-def add_minutes_to_time(time_str, minutes_str):
+def add_minutes_to_time(time_str: str, minutes_str: str) -> str | None:
     """Add minutes to a time string (HH:MM) based on a string input like "+xx".
 
     :param time_str: Time in "HH:MM" format (e.g., "06:49").
@@ -204,7 +207,9 @@ def parse_iqama_time(prayer_time: str, iqama_value: str) -> str | None:
     return None
 
 
-def compute_islamic_midnight(prayer_data: dict, date, timezone: str) -> datetime | None:
+def compute_islamic_midnight(
+    prayer_data: dict, date: date, timezone: str
+) -> datetime | None:
     """Return the Islamic midnight for a given date.
 
     Islamic midnight is the midpoint between Isha of `date` and Fajr of the
@@ -243,7 +248,7 @@ def compute_islamic_midnight(prayer_data: dict, date, timezone: str) -> datetime
     return isha_dt + (fajr_dt - isha_dt) / 2
 
 
-def get_islamic_date(prayer_data: dict, timezone: str):
+def get_islamic_date(prayer_data: dict, timezone: str) -> date:
     """Return the civil date that corresponds to the current Islamic day.
 
     The Islamic day advances at Islamic midnight (the midpoint between
@@ -275,7 +280,7 @@ def get_islamic_date(prayer_data: dict, timezone: str):
     return today if now >= islamic_midnight else yesterday
 
 
-def get_next_friday():
+def get_next_friday() -> date:
     """Return the date of the next Friday after today.
 
     This function always returns the Friday of the following week if today is Friday,
@@ -294,7 +299,9 @@ def get_next_friday():
     return today + timedelta(days=days_until_friday)
 
 
-def get_prayer_times_for_two_days(prayer_calendar, today, timezone):
+def get_prayer_times_for_two_days(
+    prayer_calendar: list[dict[str, list[str]]], today: datetime, timezone: str
+) -> dict[str, dict[str, str | list[str]]]:
     """Extract prayer times for today and tomorrow from the provided calendar.
 
     Args:
@@ -323,7 +330,11 @@ def get_prayer_times_for_two_days(prayer_calendar, today, timezone):
     }
 
 
-def find_next_prayer(current_time, prayer_calendar, timezone):
+def find_next_prayer(
+    current_time: datetime,
+    prayer_calendar: list[dict[str, list[str]]],
+    timezone: str,
+) -> tuple[int | None, datetime | None]:
     """Find the next prayer name and its exact time based on the provided calendar.
 
     Args:

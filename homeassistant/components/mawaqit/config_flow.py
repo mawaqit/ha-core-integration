@@ -195,7 +195,7 @@ class MawaqitPrayerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
     async def async_step_mosques_coordinates(
-        self, user_input=None
+        self, user_input: dict[str, Any] | None = None
     ) -> config_entries.ConfigFlowResult:
         """Handle mosques step."""
 
@@ -261,7 +261,7 @@ class MawaqitPrayerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
     async def async_step_search_method(
-        self, user_input=None
+        self, user_input: dict[str, Any] | None = None
     ) -> config_entries.ConfigFlowResult:
         """Handle the user's choice of search method."""
         errors: dict[str, str] = {}
@@ -303,7 +303,7 @@ class MawaqitPrayerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
     async def async_step_keyword_search(
-        self, user_input=None
+        self, user_input: dict[str, Any] | None = None
     ) -> config_entries.ConfigFlowResult:
         """Handle the keyword search, with paginated results."""
         errors = {}

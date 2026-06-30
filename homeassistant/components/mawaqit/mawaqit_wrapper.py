@@ -5,6 +5,7 @@ fetching prayer times, and finding mosques in the neighborhood.
 """
 
 import logging
+from typing import cast
 
 from aiohttp import ClientSession
 from mawaqit import AsyncMawaqitClient
@@ -95,7 +96,7 @@ async def all_mosques_neighborhood(
 
 
 async def all_mosques_by_keyword(
-    search_keyword,
+    search_keyword: str | None,
     page: int = 1,
     username: str | None = None,
     password: str | None = None,
@@ -139,7 +140,7 @@ async def fetch_prayer_times(
                 latitude, longitude, mosque, username, password, token, session=session
             )
         await client.get_api_token()
-        return await client.fetch_prayer_times()
+        return cast("dict | None", await client.fetch_prayer_times())
     finally:
         if client is not None:
             await client.close()
@@ -157,7 +158,7 @@ async def fetch_mosque_by_id(
         if client is None:
             client = AsyncMawaqitClient(token=token, session=session)
         await client.get_api_token()
-        return await client.fetch_mosque_by_id(mosque)
+        return cast("dict | None", await client.fetch_mosque_by_id(mosque))
     finally:
         if client is not None:
             await client.close()
