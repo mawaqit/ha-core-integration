@@ -18,16 +18,17 @@ class MawaqitEntity(CoordinatorEntity[PrayerTimeCoordinator]):
         self,
         coordinator: PrayerTimeCoordinator,
         mosque_uuid: str,
-        mosque_name: str | None,
+        mosque_data: dict,
     ) -> None:
         """Initialize the Mawaqit entity."""
         super().__init__(coordinator)
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, mosque_uuid)},
-            name=mosque_name,
+            name=mosque_data.get("name"),
             manufacturer="MAWAQIT",
             entry_type=DeviceEntryType.SERVICE,
-            configuration_url=MAWAQIT_URL,
+            # Mosques without a public page fall back to the MAWAQIT home page.
+            configuration_url=mosque_data.get("url") or MAWAQIT_URL,
         )
 
     @property

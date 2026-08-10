@@ -32,9 +32,12 @@ PRAYER_TIMES_ROW = ["05:30", "06:45", "12:30", "15:45", "18:30", "20:00"]
 IQAMA_OFFSET_TIMES_ROW = ["+10", "+15", "+10", "+5", "+10"]
 IQAMA_ABSOLUTE_TIMES_ROW = ["05:45", "13:00", "16:00", "19:00", "21:00"]
 
+MOCK_MOSQUE_URL = "https://mawaqit.net/en/test-mosque"
+
 MOCK_MOSQUE_DATA: dict[str, Any] = {
     "uuid": MOCK_UUID,
     "name": "Test Mosque",
+    "url": MOCK_MOSQUE_URL,
     "announcements": [
         {"title": "Ramadan", "content": "Starts tomorrow"},
     ],

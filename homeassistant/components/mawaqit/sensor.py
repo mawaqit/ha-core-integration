@@ -166,7 +166,7 @@ async def async_setup_entry(
 
     prayer_data = prayer_time_coordinator.data
     mosque_uuid = config_entry.data[CONF_UUID]
-    mosque_name = mosque_coordinator.data.get("name")
+    mosque_data = mosque_coordinator.data
 
     entities: list[SensorEntity] = []
 
@@ -174,7 +174,7 @@ async def async_setup_entry(
     entities.extend(
         [
             MawaqitPrayerTimeSensor(
-                prayer_time_coordinator, desc, mosque_uuid, mosque_name
+                prayer_time_coordinator, desc, mosque_uuid, mosque_data
             )
             for desc in PRAYER_TIME_SENSOR_DESCRIPTIONS
         ]
@@ -184,7 +184,7 @@ async def async_setup_entry(
     entities.extend(
         [
             MawaqitPrayerTimeSensor(
-                prayer_time_coordinator, desc, mosque_uuid, mosque_name
+                prayer_time_coordinator, desc, mosque_uuid, mosque_data
             )
             for desc in JUMUA_PRAYER_TIME_SENSOR_DESCRIPTIONS
             if prayer_data and desc.get_value(prayer_data) is not None
@@ -200,7 +200,7 @@ async def async_setup_entry(
         entities.extend(
             [
                 MawaqitPrayerTimeSensor(
-                    prayer_time_coordinator, desc, mosque_uuid, mosque_name
+                    prayer_time_coordinator, desc, mosque_uuid, mosque_data
                 )
                 for desc in IQAMA_PRAYER_TIME_SENSOR_DESCRIPTIONS
             ]
@@ -209,7 +209,7 @@ async def async_setup_entry(
     # Register Next Prayer Sensors
     entities.extend(
         [
-            NextPrayerSensor(prayer_time_coordinator, desc, mosque_uuid, mosque_name)
+            NextPrayerSensor(prayer_time_coordinator, desc, mosque_uuid, mosque_data)
             for desc in NEXT_SALAT_SENSOR_DESCRIPTION
         ]
     )
@@ -230,10 +230,10 @@ class MawaqitPrayerTimeSensor(MawaqitEntity, SensorEntity):
         coordinator: PrayerTimeCoordinator,
         sensor_description: MawaqitPrayerTimeSensorEntityDescription,
         mosque_uuid: str,
-        mosque_name: str | None,
+        mosque_data: dict,
     ) -> None:
         """Initialize the prayer time sensor."""
-        super().__init__(coordinator, mosque_uuid, mosque_name)
+        super().__init__(coordinator, mosque_uuid, mosque_data)
         self.entity_description = sensor_description
         self._attr_unique_id = f"{mosque_uuid}_{self.entity_description.key.lower()}"
 
@@ -270,10 +270,10 @@ class NextPrayerSensor(MawaqitEntity, SensorEntity):
         coordinator: PrayerTimeCoordinator,
         description: SensorEntityDescription,
         mosque_uuid: str,
-        mosque_name: str | None,
+        mosque_data: dict,
     ) -> None:
         """Initialize the sensor with a specific description."""
-        super().__init__(coordinator, mosque_uuid, mosque_name)
+        super().__init__(coordinator, mosque_uuid, mosque_data)
         self.entity_description = description
         self._attr_unique_id = (
             f"{mosque_uuid}_next_prayer_{self.entity_description.key.lower()}"

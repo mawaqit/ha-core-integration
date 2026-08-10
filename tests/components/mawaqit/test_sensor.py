@@ -18,11 +18,9 @@ from homeassistant.components.sensor import SensorDeviceClass, SensorEntityDescr
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr, entity_registry as er
 
-from .conftest import MOCK_UUID, build_prayer_data
+from .conftest import MOCK_MOSQUE_DATA, MOCK_MOSQUE_URL, MOCK_UUID, build_prayer_data
 
 from tests.common import MockConfigEntry
-
-MOSQUE_NAME = "Test Mosque"
 
 # ---------------------------------------------------------------------------
 # Sensor setup tests
@@ -103,6 +101,7 @@ async def test_mosque_device_carries_the_mosque_name(
     assert device is not None
     assert device.name == "Test Mosque"
     assert device.entry_type is dr.DeviceEntryType.SERVICE
+    assert device.configuration_url == MOCK_MOSQUE_URL
 
     assert hass.states.get("sensor.mosque_information") is None
 
@@ -249,7 +248,7 @@ def test_prayer_time_sensor_native_value_none_when_no_data() -> None:
     coordinator = MagicMock(spec=PrayerTimeCoordinator)
     coordinator.data = None
     sensor = MawaqitPrayerTimeSensor(
-        coordinator, PRAYER_TIME_SENSOR_DESCRIPTIONS[0], MOCK_UUID, MOSQUE_NAME
+        coordinator, PRAYER_TIME_SENSOR_DESCRIPTIONS[0], MOCK_UUID, MOCK_MOSQUE_DATA
     )
     assert sensor.native_value is None
 
@@ -264,7 +263,7 @@ def test_prayer_time_sensor_native_value_raises() -> None:
         device_class=SensorDeviceClass.TIMESTAMP,
         get_value=MagicMock(side_effect=KeyError("missing")),
     )
-    sensor = MawaqitPrayerTimeSensor(coordinator, desc, MOCK_UUID, MOSQUE_NAME)
+    sensor = MawaqitPrayerTimeSensor(coordinator, desc, MOCK_UUID, MOCK_MOSQUE_DATA)
     assert sensor.native_value is None
 
 
@@ -272,7 +271,10 @@ def test_next_prayer_sensor_native_value_unhandled_key() -> None:
     """Test NextPrayerSensor returns None for a description key it does not handle."""
     coordinator = MagicMock(spec=PrayerTimeCoordinator)
     sensor = NextPrayerSensor(
-        coordinator, SensorEntityDescription(key="unhandled"), MOCK_UUID, MOSQUE_NAME
+        coordinator,
+        SensorEntityDescription(key="unhandled"),
+        MOCK_UUID,
+        MOCK_MOSQUE_DATA,
     )
     sensor._next_prayer_index = 2
     sensor._next_prayer_time = datetime(2025, 4, 10, 12, 30)
