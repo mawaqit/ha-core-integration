@@ -47,28 +47,32 @@ rules:
   test-coverage: done
 
   # Gold
-  devices:
-    status: exempt
-    comment: This integration does not use devices
+  devices: done
   diagnostics: todo
   discovery-update-info:
     status: exempt
-    comment: This integration does not use devices
+    comment: >-
+      This integration is a cloud service and is not discoverable on the
+      network.
   discovery:
     status: exempt
-    comment: This integration does not use devices
+    comment: >-
+      This integration is a cloud service and is not discoverable on the
+      network.
   docs-data-update: done
   docs-examples: done
   docs-known-limitations: done
   docs-supported-devices:
     status: exempt
-    comment: This integration does not use devices
+    comment: This integration is a cloud service and does not support devices
   docs-supported-functions: done
   docs-troubleshooting: done
   docs-use-cases: done
   dynamic-devices:
     status: exempt
-    comment: This integration does not use devices
+    comment: >-
+      A config entry always maps to exactly one mosque, so no devices can be
+      discovered after setup.
   entity-category: done
   entity-device-class: done
   entity-disabled-by-default: done
@@ -82,7 +86,9 @@ rules:
       This integration has no repairable issues.
   stale-devices:
     status: exempt
-    comment: This integration does not use devices
+    comment: >-
+      A config entry always maps to exactly one mosque, so its device is
+      removed together with the entry.
 
   # Platinum
   async-dependency: done

@@ -1,7 +1,6 @@
 """Module provides sensor entities for the Mawaqit integration in Home Assistant.
 
 It includes the following sensor entities:
-- Mosque information sensor
 - Prayer time sensors
 - Iqama prayer time sensors
 - Next prayer sensors
@@ -9,7 +8,6 @@ It includes the following sensor entities:
 The sensors are set up using the `async_setup_entry` function, which initializes the necessary coordinators and adds the entities to the platform.
 
 Classes:
-    MyMosqueSensor: Represents a mosque sensor.
     MawaqitPrayerTimeSensor: Represents a prayer time sensor.
     NextPrayerSensor: Represents the next prayer time and name sensor.
 
@@ -32,21 +30,16 @@ from homeassistant.const import CONF_UUID
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.event import async_track_point_in_utc_time
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 import homeassistant.util.dt as dt_util
 
 from . import MawaqitConfigEntry, utils
 from .const import PRAYER_NAMES
-from .coordinator import MosqueCoordinator, PrayerTimeCoordinator
+from .coordinator import PrayerTimeCoordinator
+from .entity import MawaqitEntity
 
 _LOGGER = logging.getLogger(__name__)
 
 PARALLEL_UPDATES = 1
-
-MOSQUE_SENSOR_DESCRIPTION = SensorEntityDescription(
-    key="mosque_info",
-    translation_key="mosque_info",
-)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -173,16 +166,16 @@ async def async_setup_entry(
 
     prayer_data = prayer_time_coordinator.data
     mosque_uuid = config_entry.data[CONF_UUID]
+    mosque_name = mosque_coordinator.data.get("name")
 
     entities: list[SensorEntity] = []
-
-    # Mosque Sensor
-    entities.append(MyMosqueSensor(mosque_coordinator, mosque_uuid))
 
     # Prayer Time Sensors
     entities.extend(
         [
-            MawaqitPrayerTimeSensor(prayer_time_coordinator, desc, mosque_uuid)
+            MawaqitPrayerTimeSensor(
+                prayer_time_coordinator, desc, mosque_uuid, mosque_name
+            )
             for desc in PRAYER_TIME_SENSOR_DESCRIPTIONS
         ]
     )
@@ -190,7 +183,9 @@ async def async_setup_entry(
     # Register Jumua Prayer Time Sensors
     entities.extend(
         [
-            MawaqitPrayerTimeSensor(prayer_time_coordinator, desc, mosque_uuid)
+            MawaqitPrayerTimeSensor(
+                prayer_time_coordinator, desc, mosque_uuid, mosque_name
+            )
             for desc in JUMUA_PRAYER_TIME_SENSOR_DESCRIPTIONS
             if prayer_data and desc.get_value(prayer_data) is not None
         ]
@@ -204,7 +199,9 @@ async def async_setup_entry(
     ):
         entities.extend(
             [
-                MawaqitPrayerTimeSensor(prayer_time_coordinator, desc, mosque_uuid)
+                MawaqitPrayerTimeSensor(
+                    prayer_time_coordinator, desc, mosque_uuid, mosque_name
+                )
                 for desc in IQAMA_PRAYER_TIME_SENSOR_DESCRIPTIONS
             ]
         )
@@ -212,7 +209,7 @@ async def async_setup_entry(
     # Register Next Prayer Sensors
     entities.extend(
         [
-            NextPrayerSensor(prayer_time_coordinator, desc, mosque_uuid)
+            NextPrayerSensor(prayer_time_coordinator, desc, mosque_uuid, mosque_name)
             for desc in NEXT_SALAT_SENSOR_DESCRIPTION
         ]
     )
@@ -223,36 +220,8 @@ async def async_setup_entry(
     _LOGGER.info("Mawaqit sensors successfully initialized")
 
 
-class MyMosqueSensor(SensorEntity, CoordinatorEntity[MosqueCoordinator]):
-    """Representation of a mosque sensor."""
-
-    _attr_has_entity_name = True
-
-    def __init__(self, coordinator: MosqueCoordinator, mosque_uuid: str) -> None:
-        """Initialize the mosque sensor."""
-        super().__init__(coordinator)
-        self.entity_description = MOSQUE_SENSOR_DESCRIPTION
-        self._attr_unique_id = f"{mosque_uuid}_{self.entity_description.key.lower()}"
-
-    @property
-    @override
-    def native_value(self) -> str | None:
-        """Return the current mosque name as the sensor state."""
-        if not self.coordinator.data:
-            return None
-        return self.coordinator.data.get("name")
-
-    @property
-    @override
-    def available(self) -> bool:
-        """Return True if entity is available."""
-        return super().available and self.coordinator.data is not None
-
-
-class MawaqitPrayerTimeSensor(SensorEntity, CoordinatorEntity[PrayerTimeCoordinator]):
+class MawaqitPrayerTimeSensor(MawaqitEntity, SensorEntity):
     """Representation of a prayer time sensor."""
-
-    _attr_has_entity_name = True
 
     entity_description: MawaqitPrayerTimeSensorEntityDescription
 
@@ -261,9 +230,10 @@ class MawaqitPrayerTimeSensor(SensorEntity, CoordinatorEntity[PrayerTimeCoordina
         coordinator: PrayerTimeCoordinator,
         sensor_description: MawaqitPrayerTimeSensorEntityDescription,
         mosque_uuid: str,
+        mosque_name: str | None,
     ) -> None:
         """Initialize the prayer time sensor."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, mosque_uuid, mosque_name)
         self.entity_description = sensor_description
         self._attr_unique_id = f"{mosque_uuid}_{self.entity_description.key.lower()}"
 
@@ -286,14 +256,8 @@ class MawaqitPrayerTimeSensor(SensorEntity, CoordinatorEntity[PrayerTimeCoordina
             )
             return None
 
-    @property
-    @override
-    def available(self) -> bool:
-        """Return True if entity is available."""
-        return super().available and self.coordinator.data is not None
 
-
-class NextPrayerSensor(SensorEntity, CoordinatorEntity[PrayerTimeCoordinator]):
+class NextPrayerSensor(MawaqitEntity, SensorEntity):
     """Sensor for the next prayer time and name.
 
     Computes the next prayer from the coordinator's prayer calendar and
@@ -301,16 +265,15 @@ class NextPrayerSensor(SensorEntity, CoordinatorEntity[PrayerTimeCoordinator]):
     when each prayer starts.
     """
 
-    _attr_has_entity_name = True
-
     def __init__(
         self,
         coordinator: PrayerTimeCoordinator,
         description: SensorEntityDescription,
         mosque_uuid: str,
+        mosque_name: str | None,
     ) -> None:
         """Initialize the sensor with a specific description."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, mosque_uuid, mosque_name)
         self.entity_description = description
         self._attr_unique_id = (
             f"{mosque_uuid}_next_prayer_{self.entity_description.key.lower()}"
@@ -388,9 +351,3 @@ class NextPrayerSensor(SensorEntity, CoordinatorEntity[PrayerTimeCoordinator]):
         if self.entity_description.key == "next_salat_time":
             return self._next_prayer_time
         return None
-
-    @property
-    @override
-    def available(self) -> bool:
-        """Return True if entity is available."""
-        return super().available and self.coordinator.data is not None
